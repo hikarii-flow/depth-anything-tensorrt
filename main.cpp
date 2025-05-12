@@ -204,6 +204,8 @@ int main(int argc, char** argv) {
             string generated_name;
             string full_output_location;
             string current_suffix;
+            bool grayscale_output = options.find("grayscale") != options.end();
+
             if (!options["prefix"].empty()) {
                 prefix = options["prefix"];
             }
@@ -263,7 +265,7 @@ int main(int argc, char** argv) {
                     if (frame.empty())
                         break;
                     auto start = std::chrono::system_clock::now();
-                    cv::Mat result_d = depth_model.predict(frame);
+                    cv::Mat result_d = depth_model.predict(frame, grayscale_output);
                     auto end = chrono::system_clock::now();
                     tpf = chrono::duration_cast<std::chrono::duration<double, std::milli>>(end - start).count();
 
@@ -295,6 +297,9 @@ int main(int argc, char** argv) {
                     if (!options["preview"].empty()) {
                         cv::Mat show_frame;
                         frame.copyTo(show_frame);
+                        if (result_d.channels() == 1) {
+                            cv::cvtColor(result_d, result_d, cv::COLOR_GRAY2BGR);
+                        }
                         cv::Mat result;
                         cv::hconcat(show_frame, result_d, result);
                         cv::resize(result, result, cv::Size(width, height / 2)); //IMPORTANT
@@ -346,13 +351,16 @@ int main(int argc, char** argv) {
                 
 
                 auto start = chrono::system_clock::now();
-                cv::Mat result_d = depth_model.predict(frame);
+                cv::Mat result_d = depth_model.predict(frame, grayscale_output);
                 auto end = chrono::system_clock::now();
                 double tpf = chrono::duration_cast<std::chrono::duration<double, std::milli>>(end - start).count();
                 cout << "time per frame:" << setw(9) << tpf << "ms fps:" << setw(4) << floor(100 / (tpf / 1000)) / 100.0 << endl;
                 if (!options["preview"].empty()) {
                     cv::Mat show_frame;
                     frame.copyTo(show_frame);
+                    if (result_d.channels() == 1) {
+                        cv::cvtColor(result_d, result_d, cv::COLOR_GRAY2BGR);
+                    }
                     cv::Mat result;
                     cv::hconcat(show_frame, result_d, result);
                     cv::resize(result, result, cv::Size(1080, 480));
